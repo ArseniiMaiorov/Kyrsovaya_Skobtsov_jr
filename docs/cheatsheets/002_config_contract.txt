@@ -1,0 +1,5 @@
+Шпаргалка: контракт конфигурации
+- Точка входа: `src/utils/config.py::load_config(path)`.
+- Обязательные разделы: `task`, `sequence`, `data`, `compute_budget`, `training`.
+- Текущие фиксированные решения: `task.type=multiclass`, `sequence.mode=time_windows`, `data.format=csv`.
+- Любое изменение контракта должно быть зафиксировано в `docs/devlog.md`.

@@ -1,0 +1,29 @@
+task:
+  type: multiclass
+  labels: [0, 1, 2]
+  target_col: "Class"
+
+sequence:
+  mode: time_windows
+  T: 128
+  stride: 32
+  overlap: 0.75
+
+data:
+  format: csv
+  path: data/tmi.csv
+  sep: ","
+  encoding: "utf-8"
+  null_tokens: ["", "NA", "N/A", "NaN", "nan", "null", "None", -999, -9999]
+
+compute_budget:
+  population_size: 12
+  generations: 8
+  max_epochs_fitness: 10
+  max_epochs_final: 50
+  target_macro_f1_gain_vs_baseline: 0.03
+
+training:
+  early_stopping_patience: 5
+  reduce_lr_patience: 3
+  reduce_lr_factor: 0.5
