@@ -1,0 +1,8 @@
+Шпаргалка: Этап 3 (split + preprocessing)
+- `build_window_split_plan(df, target_col, window_size, stride, train_ratio, val_ratio, test_ratio, random_state)`: time-based split по непрерывным участкам.
+- `validate_no_index_leakage(plan)`: проверка пересечения строк между split.
+- `materialize_labeled_window_splits(features, targets, plan)`: сборка окон `train/val/test`.
+- `fit_raw_preprocessor(...)` / `transform_raw_*`: `raw` = median + `float32`, без масштабирования.
+- `fit_improved_preprocessor(...)` / `transform_improved_*`: `improved` = median + winsorize + `RobustScaler`.
+- Скрипт запуска: `scripts/run_stage3_preprocessing.py`.
+- Артефакты: `reports/experiments/stage3_preprocessing_summary.md`, `reports/experiments/stage3_preprocessing_summary.json`.

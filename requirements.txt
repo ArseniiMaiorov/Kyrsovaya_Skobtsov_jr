@@ -9,3 +9,4 @@ seaborn>=0.13
 tqdm>=4.66
 jupyter>=1.0
 tensorflow>=2.15
+xlrd>=2.0.1

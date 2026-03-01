@@ -3,6 +3,10 @@ task:
   labels: [0, 1, 2]
   target_col: "Class"
 
+reproducibility:
+  global_seed: 42
+  checksum_algorithm: "sha256"
+
 sequence:
   mode: time_windows
   T: 128
@@ -10,11 +14,34 @@ sequence:
   overlap: 0.75
 
 data:
-  format: csv
-  path: data/tmi.csv
-  sep: ","
-  encoding: "utf-8"
+  expected_feature_count: 49
+  drop_all_nan_rows: true
   null_tokens: ["", "NA", "N/A", "NaN", "nan", "null", "None", -999, -9999]
+  labeled:
+    format: xls
+    path: data/MKA_TMI_labels.xls
+    sheet_name: "Лист1"
+  unlabeled:
+    format: csv
+    path: data/MKA_04.2015_unlabeled.csv
+    sep: ","
+    encoding: "utf-8"
+
+split:
+  method: time_order_windows
+  random_state: 42
+  train_ratio: 0.7
+  val_ratio: 0.15
+  test_ratio: 0.15
+
+preprocessing:
+  raw:
+    impute_strategy: median
+    scaling: none
+  improved:
+    impute_strategy: median
+    scaler: robust
+    clip_quantiles: [0.01, 0.99]
 
 compute_budget:
   population_size: 12

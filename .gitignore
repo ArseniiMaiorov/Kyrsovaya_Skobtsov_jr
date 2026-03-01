@@ -6,3 +6,6 @@ __pycache__/
 htmlcov/
 .ipynb_checkpoints/
 .~lock.*#
+data/*.csv
+data/*.xls
+output/

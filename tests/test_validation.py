@@ -9,14 +9,13 @@ from src.data.validation import (
     normalize_missing_tokens,
     validate_dataframe_schema,
     validate_label_values,
+    validate_numeric_feature_columns,
 )
 
 
 def test_normalize_missing_tokens_replaces_values():
     df = pd.DataFrame({"a": ["1", "NA", -999], "Class": [0, 1, 2]})
-
     normalized = normalize_missing_tokens(df, ["NA", -999])
-
     assert normalized.isna().sum().to_dict()["a"] == 2
 
 
@@ -32,6 +31,15 @@ def test_validate_label_values_unknown_error():
 
 def test_validate_label_values_success():
     validate_label_values([0, 1, 2, 0])
+
+
+def test_validate_numeric_feature_columns_success_and_error():
+    good_df = pd.DataFrame({"f1": [1.0, None], "f2": [2, 3]})
+    validate_numeric_feature_columns(good_df, ["f1", "f2"])
+
+    bad_df = pd.DataFrame({"f1": [1.0, "abc"], "f2": [2, 3]})
+    with pytest.raises(DataValidationError, match="нечисловые признаки"):
+        validate_numeric_feature_columns(bad_df, ["f1", "f2"])
 
 
 def test_validate_dataframe_schema_missing_target():
@@ -58,8 +66,15 @@ def test_validate_dataframe_schema_invalid_labels():
         validate_dataframe_schema(df, contract)
 
 
+def test_validate_dataframe_schema_non_numeric_feature_error():
+    df = pd.DataFrame({"f1": [1.0, "abc"], "Class": [0, 2]})
+    contract = DataContract(target_col="Class")
+
+    with pytest.raises(DataValidationError, match="нечисловые признаки"):
+        validate_dataframe_schema(df, contract)
+
+
 def test_validate_dataframe_schema_success():
     df = pd.DataFrame({"f1": [1.0, 2.0], "f2": [3.0, 4.0], "Class": [0, 2]})
     contract = DataContract(target_col="Class", required_features=("f1", "f2"))
-
     validate_dataframe_schema(df, contract)

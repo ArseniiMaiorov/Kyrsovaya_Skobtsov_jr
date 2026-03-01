@@ -1,0 +1,10 @@
+Шпаргалка: EDA (этап 2)
+- `build_eda_summary(labeled_df, unlabeled_df, target_col)`: сводный расчет по пропускам, статистике, заглушкам, константным признакам, выбросам и корреляциям.
+- `get_top_missing_features(df, columns, top_n)`: топ признаков по доле пропусков.
+- `get_basic_statistics(df, columns)`: mean/std/min/max/q01/q25/q50/q75/q99.
+- `get_placeholder_counts(df, columns)`: поиск `-999` и `-9999`.
+- `get_constant_features(df, columns)`: список константных признаков.
+- `get_outlier_share_iqr(df, columns)`: доля выбросов по правилу IQR.
+- `get_high_correlation_pairs(df, columns, threshold, max_pairs)`: пары признаков с высокой |corr|.
+- Скрипт запуска: `scripts/run_eda_stage2.py`.
+- Артефакты: `reports/experiments/eda_summary.md`, `reports/experiments/eda_summary.json`.

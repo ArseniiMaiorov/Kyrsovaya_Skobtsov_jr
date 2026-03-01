@@ -1,0 +1,78 @@
+{
+  "time_column": null,
+  "series_column": null,
+  "split_artifact": "output/artifacts/window_split_plan.json",
+  "train_row_count_for_fit": 1875,
+  "raw": {
+    "train": [
+      55,
+      128,
+      49
+    ],
+    "val": [
+      9,
+      128,
+      49
+    ],
+    "test": [
+      9,
+      128,
+      49
+    ],
+    "train_class_distribution": {
+      "0": 52,
+      "1": 2,
+      "2": 1
+    },
+    "val_class_distribution": {
+      "0": 8,
+      "2": 1
+    },
+    "test_class_distribution": {
+      "0": 6,
+      "1": 3
+    },
+    "unlabeled_windows_shape": [
+      473,
+      128,
+      49
+    ]
+  },
+  "improved": {
+    "train": [
+      55,
+      128,
+      49
+    ],
+    "val": [
+      9,
+      128,
+      49
+    ],
+    "test": [
+      9,
+      128,
+      49
+    ],
+    "train_class_distribution": {
+      "0": 52,
+      "1": 2,
+      "2": 1
+    },
+    "val_class_distribution": {
+      "0": 8,
+      "2": 1
+    },
+    "test_class_distribution": {
+      "0": 6,
+      "1": 3
+    },
+    "unlabeled_windows_shape": [
+      473,
+      128,
+      49
+    ],
+    "train_median_max_abs": 0.0,
+    "train_iqr_mean_abs_diff": 0.26530611515045166
+  }
+}

@@ -11,13 +11,38 @@ from src.utils.config import ConfigError, load_config, validate_config
 def valid_config() -> dict:
     return {
         "task": {"type": "multiclass", "labels": [0, 1, 2], "target_col": "Class"},
+        "reproducibility": {"global_seed": 42, "checksum_algorithm": "sha256"},
         "sequence": {"mode": "time_windows", "T": 128, "stride": 32, "overlap": 0.75},
         "data": {
-            "format": "csv",
-            "path": "data/tmi.csv",
-            "sep": ",",
-            "encoding": "utf-8",
+            "expected_feature_count": 49,
+            "drop_all_nan_rows": True,
             "null_tokens": ["", "NA", -999],
+            "labeled": {
+                "format": "xls",
+                "path": "data/MKA_TMI_labels.xls",
+                "sheet_name": "Лист1",
+            },
+            "unlabeled": {
+                "format": "csv",
+                "path": "data/MKA_04.2015_unlabeled.csv",
+                "sep": ",",
+                "encoding": "utf-8",
+            },
+        },
+        "split": {
+            "method": "time_order_windows",
+            "random_state": 42,
+            "train_ratio": 0.7,
+            "val_ratio": 0.15,
+            "test_ratio": 0.15,
+        },
+        "preprocessing": {
+            "raw": {"impute_strategy": "median", "scaling": "none"},
+            "improved": {
+                "impute_strategy": "median",
+                "scaler": "robust",
+                "clip_quantiles": [0.01, 0.99],
+            },
         },
         "compute_budget": {
             "population_size": 12,
@@ -34,7 +59,7 @@ def valid_config() -> dict:
     }
 
 
-def test_load_config_success(tmp_path, valid_config):
+def test_load_config_success(tmp_path):
     config_path = tmp_path / "config.yaml"
     config_path.write_text(
         """
@@ -42,17 +67,41 @@ task:
   type: multiclass
   labels: [0, 1, 2]
   target_col: Class
+reproducibility:
+  global_seed: 42
+  checksum_algorithm: sha256
 sequence:
   mode: time_windows
   T: 128
   stride: 32
   overlap: 0.75
 data:
-  format: csv
-  path: data/tmi.csv
-  sep: ","
-  encoding: utf-8
+  expected_feature_count: 49
+  drop_all_nan_rows: true
   null_tokens: ["", "NA", -999]
+  labeled:
+    format: xls
+    path: data/MKA_TMI_labels.xls
+    sheet_name: Лист1
+  unlabeled:
+    format: csv
+    path: data/MKA_04.2015_unlabeled.csv
+    sep: ","
+    encoding: utf-8
+split:
+  method: time_order_windows
+  random_state: 42
+  train_ratio: 0.7
+  val_ratio: 0.15
+  test_ratio: 0.15
+preprocessing:
+  raw:
+    impute_strategy: median
+    scaling: none
+  improved:
+    impute_strategy: median
+    scaler: robust
+    clip_quantiles: [0.01, 0.99]
 compute_budget:
   population_size: 12
   generations: 8
@@ -68,7 +117,7 @@ training:
     )
 
     loaded = load_config(config_path)
-    assert loaded["task"]["labels"] == [0, 1, 2]
+    assert loaded["split"]["method"] == "time_order_windows"
 
 
 def test_load_config_file_not_found():
@@ -103,8 +152,28 @@ def test_validate_config_missing_sections(valid_config):
 def test_validate_config_task_errors(valid_config, field, value, error):
     broken = deepcopy(valid_config)
     broken["task"][field] = value
-
     with pytest.raises(ConfigError, match=error):
+        validate_config(broken)
+
+
+def test_validate_config_reproducibility_not_mapping(valid_config):
+    broken = deepcopy(valid_config)
+    broken["reproducibility"] = "bad"
+    with pytest.raises(ConfigError, match="reproducibility должен быть словарем"):
+        validate_config(broken)
+
+
+def test_validate_config_reproducibility_global_seed_error(valid_config):
+    broken = deepcopy(valid_config)
+    broken["reproducibility"]["global_seed"] = -1
+    with pytest.raises(ConfigError, match="reproducibility.global_seed"):
+        validate_config(broken)
+
+
+def test_validate_config_reproducibility_checksum_algorithm_error(valid_config):
+    broken = deepcopy(valid_config)
+    broken["reproducibility"]["checksum_algorithm"] = "md5"
+    with pytest.raises(ConfigError, match="reproducibility.checksum_algorithm"):
         validate_config(broken)
 
 
@@ -120,33 +189,199 @@ def test_validate_config_task_errors(valid_config, field, value, error):
 def test_validate_config_sequence_errors(valid_config, field, value, error):
     broken = deepcopy(valid_config)
     broken["sequence"][field] = value
-
     with pytest.raises(ConfigError, match=error):
         validate_config(broken)
 
 
-@pytest.mark.parametrize(
-    ("field", "value", "error"),
-    [
-        ("format", "parquet", "data.format"),
-        ("path", "", "data.path"),
-        ("sep", "", "data.sep"),
-        ("encoding", "", "data.encoding"),
-    ],
-)
-def test_validate_config_data_text_field_errors(valid_config, field, value, error):
+def test_validate_config_data_not_mapping(valid_config):
     broken = deepcopy(valid_config)
-    broken["data"][field] = value
+    broken["data"] = "bad"
+    with pytest.raises(ConfigError, match="data должен быть словарем"):
+        validate_config(broken)
 
-    with pytest.raises(ConfigError, match=error):
+
+def test_validate_config_data_expected_feature_count_error(valid_config):
+    broken = deepcopy(valid_config)
+    broken["data"]["expected_feature_count"] = 0
+    with pytest.raises(ConfigError, match="expected_feature_count"):
+        validate_config(broken)
+
+
+def test_validate_config_data_drop_all_nan_rows_error(valid_config):
+    broken = deepcopy(valid_config)
+    broken["data"]["drop_all_nan_rows"] = "yes"
+    with pytest.raises(ConfigError, match="drop_all_nan_rows"):
         validate_config(broken)
 
 
 def test_validate_config_data_null_tokens_error(valid_config):
     broken = deepcopy(valid_config)
     broken["data"]["null_tokens"] = []
-
     with pytest.raises(ConfigError, match="data.null_tokens"):
+        validate_config(broken)
+
+
+def test_validate_config_data_labeled_not_mapping(valid_config):
+    broken = deepcopy(valid_config)
+    broken["data"]["labeled"] = "bad"
+    with pytest.raises(ConfigError, match="data.labeled должен быть словарем"):
+        validate_config(broken)
+
+
+def test_validate_config_data_unlabeled_not_mapping(valid_config):
+    broken = deepcopy(valid_config)
+    broken["data"]["unlabeled"] = "bad"
+    with pytest.raises(ConfigError, match="data.unlabeled должен быть словарем"):
+        validate_config(broken)
+
+
+def test_validate_config_data_unknown_format(valid_config):
+    broken = deepcopy(valid_config)
+    broken["data"]["labeled"]["format"] = "xlsx"
+    with pytest.raises(ConfigError, match="data.labeled.format"):
+        validate_config(broken)
+
+
+def test_validate_config_data_labeled_path_error(valid_config):
+    broken = deepcopy(valid_config)
+    broken["data"]["labeled"]["path"] = ""
+    with pytest.raises(ConfigError, match="data.labeled.path"):
+        validate_config(broken)
+
+
+def test_validate_config_data_unlabeled_sep_error(valid_config):
+    broken = deepcopy(valid_config)
+    broken["data"]["unlabeled"]["sep"] = ""
+    with pytest.raises(ConfigError, match="data.unlabeled.sep"):
+        validate_config(broken)
+
+
+def test_validate_config_data_unlabeled_encoding_error(valid_config):
+    broken = deepcopy(valid_config)
+    broken["data"]["unlabeled"]["encoding"] = ""
+    with pytest.raises(ConfigError, match="data.unlabeled.encoding"):
+        validate_config(broken)
+
+
+def test_validate_config_data_sheet_name_error(valid_config):
+    broken = deepcopy(valid_config)
+    broken["data"]["labeled"]["sheet_name"] = []
+    with pytest.raises(ConfigError, match="data.labeled.sheet_name"):
+        validate_config(broken)
+
+
+def test_validate_config_split_not_mapping(valid_config):
+    broken = deepcopy(valid_config)
+    broken["split"] = "bad"
+    with pytest.raises(ConfigError, match="split должен быть словарем"):
+        validate_config(broken)
+
+
+def test_validate_config_split_method_error(valid_config):
+    broken = deepcopy(valid_config)
+    broken["split"]["method"] = "stratified_random"
+    with pytest.raises(ConfigError, match="split.method"):
+        validate_config(broken)
+
+
+def test_validate_config_split_random_state_error(valid_config):
+    broken = deepcopy(valid_config)
+    broken["split"]["random_state"] = -1
+    with pytest.raises(ConfigError, match="split.random_state"):
+        validate_config(broken)
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "error"),
+    [
+        ("train_ratio", 0, "split.train_ratio"),
+        ("val_ratio", 0, "split.val_ratio"),
+        ("test_ratio", 0, "split.test_ratio"),
+    ],
+)
+def test_validate_config_split_probability_errors(valid_config, field, value, error):
+    broken = deepcopy(valid_config)
+    broken["split"][field] = value
+    with pytest.raises(ConfigError, match=error):
+        validate_config(broken)
+
+
+def test_validate_config_split_sum_error(valid_config):
+    broken = deepcopy(valid_config)
+    broken["split"]["train_ratio"] = 0.8
+    broken["split"]["val_ratio"] = 0.15
+    broken["split"]["test_ratio"] = 0.1
+    with pytest.raises(ConfigError, match="Сумма split.train_ratio"):
+        validate_config(broken)
+
+
+def test_validate_config_preprocessing_not_mapping(valid_config):
+    broken = deepcopy(valid_config)
+    broken["preprocessing"] = "bad"
+    with pytest.raises(ConfigError, match="preprocessing должен быть словарем"):
+        validate_config(broken)
+
+
+def test_validate_config_preprocessing_raw_not_mapping(valid_config):
+    broken = deepcopy(valid_config)
+    broken["preprocessing"]["raw"] = "bad"
+    with pytest.raises(ConfigError, match="preprocessing.raw"):
+        validate_config(broken)
+
+
+def test_validate_config_preprocessing_improved_not_mapping(valid_config):
+    broken = deepcopy(valid_config)
+    broken["preprocessing"]["improved"] = "bad"
+    with pytest.raises(ConfigError, match="preprocessing.improved"):
+        validate_config(broken)
+
+
+def test_validate_config_preprocessing_raw_impute_error(valid_config):
+    broken = deepcopy(valid_config)
+    broken["preprocessing"]["raw"]["impute_strategy"] = "mean"
+    with pytest.raises(ConfigError, match="preprocessing.raw.impute_strategy"):
+        validate_config(broken)
+
+
+def test_validate_config_preprocessing_raw_scaling_error(valid_config):
+    broken = deepcopy(valid_config)
+    broken["preprocessing"]["raw"]["scaling"] = "standard"
+    with pytest.raises(ConfigError, match="preprocessing.raw.scaling"):
+        validate_config(broken)
+
+
+def test_validate_config_preprocessing_impute_strategy_error(valid_config):
+    broken = deepcopy(valid_config)
+    broken["preprocessing"]["improved"]["impute_strategy"] = "mean"
+    with pytest.raises(ConfigError, match="impute_strategy"):
+        validate_config(broken)
+
+
+def test_validate_config_preprocessing_scaler_error(valid_config):
+    broken = deepcopy(valid_config)
+    broken["preprocessing"]["improved"]["scaler"] = "standard"
+    with pytest.raises(ConfigError, match="scaler"):
+        validate_config(broken)
+
+
+def test_validate_config_preprocessing_clip_quantiles_len_error(valid_config):
+    broken = deepcopy(valid_config)
+    broken["preprocessing"]["improved"]["clip_quantiles"] = [0.1]
+    with pytest.raises(ConfigError, match="clip_quantiles"):
+        validate_config(broken)
+
+
+def test_validate_config_preprocessing_clip_quantiles_type_error(valid_config):
+    broken = deepcopy(valid_config)
+    broken["preprocessing"]["improved"]["clip_quantiles"] = ["0.1", 0.9]
+    with pytest.raises(ConfigError, match="содержать числа"):
+        validate_config(broken)
+
+
+def test_validate_config_preprocessing_clip_quantiles_order_error(valid_config):
+    broken = deepcopy(valid_config)
+    broken["preprocessing"]["improved"]["clip_quantiles"] = [0.9, 0.1]
+    with pytest.raises(ConfigError, match="0 <= lower < upper <= 1"):
         validate_config(broken)
 
 
@@ -162,7 +397,6 @@ def test_validate_config_data_null_tokens_error(valid_config):
 def test_validate_config_compute_positive_int_errors(valid_config, field, value, error):
     broken = deepcopy(valid_config)
     broken["compute_budget"][field] = value
-
     with pytest.raises(ConfigError, match=error):
         validate_config(broken)
 
@@ -170,7 +404,6 @@ def test_validate_config_compute_positive_int_errors(valid_config, field, value,
 def test_validate_config_compute_gain_error(valid_config):
     broken = deepcopy(valid_config)
     broken["compute_budget"]["target_macro_f1_gain_vs_baseline"] = 0
-
     with pytest.raises(ConfigError, match="target_macro_f1_gain_vs_baseline"):
         validate_config(broken)
 
@@ -185,7 +418,6 @@ def test_validate_config_compute_gain_error(valid_config):
 def test_validate_config_training_positive_int_errors(valid_config, field, value, error):
     broken = deepcopy(valid_config)
     broken["training"][field] = value
-
     with pytest.raises(ConfigError, match=error):
         validate_config(broken)
 
@@ -193,6 +425,5 @@ def test_validate_config_training_positive_int_errors(valid_config, field, value
 def test_validate_config_training_factor_error(valid_config):
     broken = deepcopy(valid_config)
     broken["training"]["reduce_lr_factor"] = 1.0
-
     with pytest.raises(ConfigError, match="training.reduce_lr_factor"):
         validate_config(broken)

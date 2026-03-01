@@ -1,0 +1,8 @@
+Шпаргалка: Этап 4 (baseline)
+- `build_baseline_model(model_name, random_state, class_weight)`.
+- `run_baseline_experiment(...)`: обучение + единый расчет метрик на eval.
+- Baseline по ТЗ на этом этапе: `logistic_regression` на flattened окнах.
+- Сравнение делается только по `val`, `test` не используется.
+- Метрики считаются через `src/metrics/metrics.py`.
+- Скрипт запуска: `scripts/run_stage4_baseline.py`.
+- Артефакты: `reports/experiments/stage4_baseline_summary.md`, `reports/experiments/stage4_baseline_summary.json`.

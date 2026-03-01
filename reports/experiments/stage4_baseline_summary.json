@@ -1,0 +1,166 @@
+{
+  "model_name": "logistic_regression",
+  "labels": [
+    0,
+    1,
+    2
+  ],
+  "random_state": 42,
+  "versions": {
+    "raw": {
+      "train_shape_flat": [
+        55,
+        6272
+      ],
+      "val_shape_flat": [
+        9,
+        6272
+      ],
+      "val_missing_labels": "1",
+      "val_metrics": {
+        "accuracy": 0.3333333333333333,
+        "balanced_accuracy": 0.1875,
+        "macro_precision": 0.3333333333333333,
+        "macro_recall": 0.125,
+        "macro_f1": 0.1818181818181818,
+        "weighted_f1": 0.4848484848484848,
+        "roc_auc_ovr_macro": null,
+        "confusion_matrix": [
+          [
+            3,
+            2,
+            3
+          ],
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            0
+          ]
+        ],
+        "labels": [
+          0,
+          1,
+          2
+        ],
+        "classification_report": {
+          "0": {
+            "precision": 1.0,
+            "recall": 0.375,
+            "f1-score": 0.5454545454545454,
+            "support": 8.0
+          },
+          "1": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1-score": 0.0,
+            "support": 0.0
+          },
+          "2": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1-score": 0.0,
+            "support": 1.0
+          },
+          "accuracy": 0.3333333333333333,
+          "macro avg": {
+            "precision": 0.3333333333333333,
+            "recall": 0.125,
+            "f1-score": 0.1818181818181818,
+            "support": 9.0
+          },
+          "weighted avg": {
+            "precision": 0.8888888888888888,
+            "recall": 0.3333333333333333,
+            "f1-score": 0.4848484848484848,
+            "support": 9.0
+          }
+        },
+        "classification_report_text": "              precision    recall  f1-score   support\n\n           0       1.00      0.38      0.55         8\n           1       0.00      0.00      0.00         0\n           2       0.00      0.00      0.00         1\n\n    accuracy                           0.33         9\n   macro avg       0.33      0.12      0.18         9\nweighted avg       0.89      0.33      0.48         9\n",
+        "roc_auc_note": "ROC AUC не вычислен: получено значение NaN"
+      }
+    },
+    "improved": {
+      "train_shape_flat": [
+        55,
+        6272
+      ],
+      "val_shape_flat": [
+        9,
+        6272
+      ],
+      "val_missing_labels": "1",
+      "val_metrics": {
+        "accuracy": 0.8888888888888888,
+        "balanced_accuracy": 0.5,
+        "macro_precision": 0.4444444444444444,
+        "macro_recall": 0.5,
+        "macro_f1": 0.47058823529411764,
+        "weighted_f1": 0.8366013071895425,
+        "roc_auc_ovr_macro": null,
+        "confusion_matrix": [
+          [
+            8,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            1,
+            0,
+            0
+          ]
+        ],
+        "labels": [
+          0,
+          1,
+          2
+        ],
+        "classification_report": {
+          "0": {
+            "precision": 0.8888888888888888,
+            "recall": 1.0,
+            "f1-score": 0.9411764705882353,
+            "support": 8.0
+          },
+          "1": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1-score": 0.0,
+            "support": 0.0
+          },
+          "2": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1-score": 0.0,
+            "support": 1.0
+          },
+          "accuracy": 0.8888888888888888,
+          "macro avg": {
+            "precision": 0.2962962962962963,
+            "recall": 0.3333333333333333,
+            "f1-score": 0.3137254901960784,
+            "support": 9.0
+          },
+          "weighted avg": {
+            "precision": 0.7901234567901234,
+            "recall": 0.8888888888888888,
+            "f1-score": 0.8366013071895425,
+            "support": 9.0
+          }
+        },
+        "classification_report_text": "              precision    recall  f1-score   support\n\n           0       0.89      1.00      0.94         8\n           1       0.00      0.00      0.00         0\n           2       0.00      0.00      0.00         1\n\n    accuracy                           0.89         9\n   macro avg       0.30      0.33      0.31         9\nweighted avg       0.79      0.89      0.84         9\n",
+        "roc_auc_note": "ROC AUC не вычислен: получено значение NaN"
+      }
+    }
+  },
+  "best_dataset_version_by_val_macro_f1": "improved"
+}

@@ -1,5 +1,9 @@
 Шпаргалка: контракт конфигурации
 - Точка входа: `src/utils/config.py::load_config(path)`.
-- Обязательные разделы: `task`, `sequence`, `data`, `compute_budget`, `training`.
-- Текущие фиксированные решения: `task.type=multiclass`, `sequence.mode=time_windows`, `data.format=csv`.
+- Обязательные разделы: `task`, `reproducibility`, `sequence`, `data`, `split`, `preprocessing`, `compute_budget`, `training`.
+- Раздел `reproducibility`: `global_seed`, `checksum_algorithm`.
+- Раздел `data`: `expected_feature_count`, `drop_all_nan_rows`, `null_tokens`, `labeled`, `unlabeled`.
+- Раздел `split`: `method`, `random_state`, `train_ratio`, `val_ratio`, `test_ratio`.
+- Раздел `preprocessing`: `raw`, `improved`.
+- Поддерживаемые форматы данных на текущем этапе: `csv`, `xls`.
 - Любое изменение контракта должно быть зафиксировано в `docs/devlog.md`.

@@ -9,11 +9,17 @@ import yaml
 
 REQUIRED_TOP_LEVEL_SECTIONS = (
     "task",
+    "reproducibility",
     "sequence",
     "data",
+    "split",
+    "preprocessing",
     "compute_budget",
     "training",
 )
+
+SUPPORTED_TABULAR_FORMATS = {"csv", "xls"}
+SUPPORTED_CHECKSUM_ALGORITHMS = {"sha256"}
 
 
 class ConfigError(ValueError):
@@ -41,6 +47,128 @@ def _require_positive_int(value: Any, field_name: str) -> None:
         raise ConfigError(f"'{field_name}' должно быть положительным целым числом")
 
 
+def _require_probability(value: Any, field_name: str) -> None:
+    if not isinstance(value, (int, float)) or not 0 < value < 1:
+        raise ConfigError(f"{field_name} должен быть числом в диапазоне (0, 1)")
+
+
+def _validate_data_source(source: Mapping[str, Any] | Any, field_name: str) -> None:
+    if not isinstance(source, Mapping):
+        raise ConfigError(f"{field_name} должен быть словарем")
+
+    source_format = source.get("format")
+    if source_format not in SUPPORTED_TABULAR_FORMATS:
+        supported = ", ".join(sorted(SUPPORTED_TABULAR_FORMATS))
+        raise ConfigError(f"{field_name}.format должен быть одним из: {supported}")
+
+    path = source.get("path")
+    if not isinstance(path, str) or not path.strip():
+        raise ConfigError(f"{field_name}.path должен быть непустой строкой")
+
+    if source_format == "csv":
+        sep = source.get("sep")
+        encoding = source.get("encoding")
+        if not isinstance(sep, str) or not sep:
+            raise ConfigError(f"{field_name}.sep должен быть непустой строкой")
+        if not isinstance(encoding, str) or not encoding:
+            raise ConfigError(f"{field_name}.encoding должен быть непустой строкой")
+
+    if source_format == "xls":
+        sheet_name = source.get("sheet_name")
+        if sheet_name is not None and not isinstance(sheet_name, (str, int)):
+            raise ConfigError(f"{field_name}.sheet_name должен быть строкой или целым числом")
+
+
+def _validate_data_section(data_cfg: Mapping[str, Any] | Any) -> None:
+    if not isinstance(data_cfg, Mapping):
+        raise ConfigError("data должен быть словарем")
+
+    expected_feature_count = data_cfg.get("expected_feature_count")
+    if not isinstance(expected_feature_count, int) or expected_feature_count <= 0:
+        raise ConfigError("data.expected_feature_count должен быть положительным целым числом")
+
+    drop_all_nan_rows = data_cfg.get("drop_all_nan_rows")
+    if not isinstance(drop_all_nan_rows, bool):
+        raise ConfigError("data.drop_all_nan_rows должен быть булевым значением")
+
+    null_tokens = data_cfg.get("null_tokens")
+    if not isinstance(null_tokens, list) or not null_tokens:
+        raise ConfigError("data.null_tokens должен быть непустым списком")
+
+    _validate_data_source(data_cfg.get("labeled"), "data.labeled")
+    _validate_data_source(data_cfg.get("unlabeled"), "data.unlabeled")
+
+
+def _validate_split_section(split_cfg: Mapping[str, Any] | Any) -> None:
+    if not isinstance(split_cfg, Mapping):
+        raise ConfigError("split должен быть словарем")
+
+    if split_cfg.get("method") != "time_order_windows":
+        raise ConfigError("split.method должен быть равен 'time_order_windows'")
+
+    random_state = split_cfg.get("random_state")
+    if not isinstance(random_state, int) or random_state < 0:
+        raise ConfigError("split.random_state должен быть неотрицательным целым числом")
+
+    train_ratio = split_cfg.get("train_ratio")
+    val_ratio = split_cfg.get("val_ratio")
+    test_ratio = split_cfg.get("test_ratio")
+    _require_probability(train_ratio, "split.train_ratio")
+    _require_probability(val_ratio, "split.val_ratio")
+    _require_probability(test_ratio, "split.test_ratio")
+
+    total = float(train_ratio) + float(val_ratio) + float(test_ratio)
+    if abs(total - 1.0) > 1e-9:
+        raise ConfigError("Сумма split.train_ratio, split.val_ratio и split.test_ratio должна быть равна 1")
+
+
+def _validate_preprocessing_section(prep_cfg: Mapping[str, Any] | Any) -> None:
+    if not isinstance(prep_cfg, Mapping):
+        raise ConfigError("preprocessing должен быть словарем")
+
+    raw_cfg = prep_cfg.get("raw")
+    improved_cfg = prep_cfg.get("improved")
+
+    if not isinstance(raw_cfg, Mapping):
+        raise ConfigError("preprocessing.raw должен быть словарем")
+    if not isinstance(improved_cfg, Mapping):
+        raise ConfigError("preprocessing.improved должен быть словарем")
+
+    if raw_cfg.get("impute_strategy") != "median":
+        raise ConfigError("preprocessing.raw.impute_strategy должен быть равен 'median'")
+    if raw_cfg.get("scaling") != "none":
+        raise ConfigError("preprocessing.raw.scaling должен быть равен 'none'")
+
+    if improved_cfg.get("impute_strategy") != "median":
+        raise ConfigError("preprocessing.improved.impute_strategy должен быть равен 'median'")
+    if improved_cfg.get("scaler") != "robust":
+        raise ConfigError("preprocessing.improved.scaler должен быть равен 'robust'")
+
+    clip_quantiles = improved_cfg.get("clip_quantiles")
+    if not isinstance(clip_quantiles, list) or len(clip_quantiles) != 2:
+        raise ConfigError("preprocessing.improved.clip_quantiles должен содержать 2 числа")
+
+    lower_q, upper_q = clip_quantiles
+    if not isinstance(lower_q, (int, float)) or not isinstance(upper_q, (int, float)):
+        raise ConfigError("preprocessing.improved.clip_quantiles должен содержать числа")
+    if not (0 <= lower_q < upper_q <= 1):
+        raise ConfigError("preprocessing.improved.clip_quantiles должен удовлетворять 0 <= lower < upper <= 1")
+
+
+def _validate_reproducibility_section(repro_cfg: Mapping[str, Any] | Any) -> None:
+    if not isinstance(repro_cfg, Mapping):
+        raise ConfigError("reproducibility должен быть словарем")
+
+    global_seed = repro_cfg.get("global_seed")
+    if not isinstance(global_seed, int) or global_seed < 0:
+        raise ConfigError("reproducibility.global_seed должен быть неотрицательным целым числом")
+
+    checksum_algorithm = repro_cfg.get("checksum_algorithm")
+    if checksum_algorithm not in SUPPORTED_CHECKSUM_ALGORITHMS:
+        supported = ", ".join(sorted(SUPPORTED_CHECKSUM_ALGORITHMS))
+        raise ConfigError(f"reproducibility.checksum_algorithm должен быть одним из: {supported}")
+
+
 def validate_config(config: Mapping[str, Any]) -> None:
     """Проверяет разделы и поля конфигурации на соответствие контракту проекта."""
     missing_sections = [name for name in REQUIRED_TOP_LEVEL_SECTIONS if name not in config]
@@ -56,6 +184,8 @@ def validate_config(config: Mapping[str, Any]) -> None:
     if not isinstance(task.get("target_col"), str) or not task["target_col"].strip():
         raise ConfigError("task.target_col должен быть непустой строкой")
 
+    _validate_reproducibility_section(config["reproducibility"])
+
     sequence = config["sequence"]
     if sequence.get("mode") != "time_windows":
         raise ConfigError("sequence.mode должен быть равен 'time_windows'")
@@ -65,15 +195,9 @@ def validate_config(config: Mapping[str, Any]) -> None:
     if not isinstance(overlap, (int, float)) or not 0 <= overlap < 1:
         raise ConfigError("sequence.overlap должен быть в диапазоне [0, 1)")
 
-    data = config["data"]
-    if data.get("format") != "csv":
-        raise ConfigError("data.format должен быть равен 'csv'")
-    for text_field in ("path", "sep", "encoding"):
-        if not isinstance(data.get(text_field), str) or not data[text_field]:
-            raise ConfigError(f"data.{text_field} должен быть непустой строкой")
-    null_tokens = data.get("null_tokens")
-    if not isinstance(null_tokens, list) or not null_tokens:
-        raise ConfigError("data.null_tokens должен быть непустым списком")
+    _validate_data_section(config.get("data"))
+    _validate_split_section(config.get("split"))
+    _validate_preprocessing_section(config.get("preprocessing"))
 
     compute_budget = config["compute_budget"]
     _require_positive_int(compute_budget.get("population_size"), "compute_budget.population_size")
