@@ -1,0 +1,246 @@
+{
+  "dataset_version": "improved",
+  "split": "official_validation_only",
+  "models": {
+    "stage6_ga_best": {
+      "model_path": "output/models/stage6_ga_best.keras",
+      "val_metrics": {
+        "accuracy": 1.0,
+        "balanced_accuracy": 1.0,
+        "macro_precision": 0.6666666666666666,
+        "macro_recall": 0.6666666666666666,
+        "macro_f1": 0.6666666666666666,
+        "weighted_f1": 1.0,
+        "roc_auc_ovr_macro": 1.0,
+        "confusion_matrix": [
+          [
+            8,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            1
+          ]
+        ],
+        "labels": [
+          0,
+          1,
+          2
+        ],
+        "classification_report": {
+          "0": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 8.0
+          },
+          "1": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1-score": 0.0,
+            "support": 0.0
+          },
+          "2": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 1.0
+          },
+          "accuracy": 1.0,
+          "macro avg": {
+            "precision": 0.6666666666666666,
+            "recall": 0.6666666666666666,
+            "f1-score": 0.6666666666666666,
+            "support": 9.0
+          },
+          "weighted avg": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 9.0
+          }
+        },
+        "classification_report_text": "              precision    recall  f1-score   support\n\n           0       1.00      1.00      1.00         8\n           1       0.00      0.00      0.00         0\n           2       1.00      1.00      1.00         1\n\n    accuracy                           1.00         9\n   macro avg       0.67      0.67      0.67         9\nweighted avg       1.00      1.00      1.00         9\n",
+        "roc_auc_note": "ROC AUC рассчитан по присутствующим классам (0, 2); отсутствующие классы исключены из усреднения"
+      },
+      "roc_curve": {
+        "path": "reports/figures/stage6_ga_best_val_roc.png",
+        "present_labels": [
+          0,
+          2
+        ],
+        "per_class_auc": {
+          "0": 1.0,
+          "2": 1.0
+        }
+      }
+    },
+    "stage7_hybrid_scratch": {
+      "model_path": "output/models/stage7_hybrid_scratch.keras",
+      "val_metrics": {
+        "accuracy": 0.8888888888888888,
+        "balanced_accuracy": 0.9375,
+        "macro_precision": 0.6666666666666666,
+        "macro_recall": 0.625,
+        "macro_f1": 0.6444444444444445,
+        "weighted_f1": 0.9407407407407408,
+        "roc_auc_ovr_macro": 0.9375,
+        "confusion_matrix": [
+          [
+            7,
+            1,
+            0
+          ],
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            1
+          ]
+        ],
+        "labels": [
+          0,
+          1,
+          2
+        ],
+        "classification_report": {
+          "0": {
+            "precision": 1.0,
+            "recall": 0.875,
+            "f1-score": 0.9333333333333333,
+            "support": 8.0
+          },
+          "1": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1-score": 0.0,
+            "support": 0.0
+          },
+          "2": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 1.0
+          },
+          "accuracy": 0.8888888888888888,
+          "macro avg": {
+            "precision": 0.6666666666666666,
+            "recall": 0.625,
+            "f1-score": 0.6444444444444445,
+            "support": 9.0
+          },
+          "weighted avg": {
+            "precision": 1.0,
+            "recall": 0.8888888888888888,
+            "f1-score": 0.9407407407407408,
+            "support": 9.0
+          }
+        },
+        "classification_report_text": "              precision    recall  f1-score   support\n\n           0       1.00      0.88      0.93         8\n           1       0.00      0.00      0.00         0\n           2       1.00      1.00      1.00         1\n\n    accuracy                           0.89         9\n   macro avg       0.67      0.62      0.64         9\nweighted avg       1.00      0.89      0.94         9\n",
+        "roc_auc_note": "ROC AUC рассчитан по присутствующим классам (0, 2); отсутствующие классы исключены из усреднения"
+      },
+      "roc_curve": {
+        "path": "reports/figures/stage7_hybrid_scratch_val_roc.png",
+        "present_labels": [
+          0,
+          2
+        ],
+        "per_class_auc": {
+          "0": 0.875,
+          "2": 1.0
+        }
+      }
+    },
+    "stage7_hybrid_ae_finetuned": {
+      "model_path": "output/models/stage7_hybrid_ae_finetuned.keras",
+      "val_metrics": {
+        "accuracy": 0.8888888888888888,
+        "balanced_accuracy": 0.9375,
+        "macro_precision": 0.6666666666666666,
+        "macro_recall": 0.625,
+        "macro_f1": 0.6444444444444445,
+        "weighted_f1": 0.9407407407407408,
+        "roc_auc_ovr_macro": 0.9375,
+        "confusion_matrix": [
+          [
+            7,
+            1,
+            0
+          ],
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            1
+          ]
+        ],
+        "labels": [
+          0,
+          1,
+          2
+        ],
+        "classification_report": {
+          "0": {
+            "precision": 1.0,
+            "recall": 0.875,
+            "f1-score": 0.9333333333333333,
+            "support": 8.0
+          },
+          "1": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1-score": 0.0,
+            "support": 0.0
+          },
+          "2": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 1.0
+          },
+          "accuracy": 0.8888888888888888,
+          "macro avg": {
+            "precision": 0.6666666666666666,
+            "recall": 0.625,
+            "f1-score": 0.6444444444444445,
+            "support": 9.0
+          },
+          "weighted avg": {
+            "precision": 1.0,
+            "recall": 0.8888888888888888,
+            "f1-score": 0.9407407407407408,
+            "support": 9.0
+          }
+        },
+        "classification_report_text": "              precision    recall  f1-score   support\n\n           0       1.00      0.88      0.93         8\n           1       0.00      0.00      0.00         0\n           2       1.00      1.00      1.00         1\n\n    accuracy                           0.89         9\n   macro avg       0.67      0.62      0.64         9\nweighted avg       1.00      0.89      0.94         9\n",
+        "roc_auc_note": "ROC AUC рассчитан по присутствующим классам (0, 2); отсутствующие классы исключены из усреднения"
+      },
+      "roc_curve": {
+        "path": "reports/figures/stage7_hybrid_ae_finetuned_val_roc.png",
+        "present_labels": [
+          0,
+          2
+        ],
+        "per_class_auc": {
+          "0": 0.875,
+          "2": 1.0
+        }
+      }
+    }
+  }
+}

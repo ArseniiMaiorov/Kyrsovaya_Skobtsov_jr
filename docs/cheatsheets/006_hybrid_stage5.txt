@@ -1,0 +1,6 @@
+Шпаргалка: Этап 5 (гибрид 1D-CNN -> GRU -> Dense)
+- `src/models/hybrid.py`: сборка и компиляция гибридной модели.
+- `src/training/hybrid_training.py`: callbacks, class_weight, обучение, оценка, история.
+- `scripts/run_stage5_hybrid.py`: обучение на `raw` и `improved`, сравнение по `val`.
+- Воспроизводимость: запускать через `initialize_reproducibility(..., use_tensorflow=True)`.
+- Артефакты: `reports/experiments/stage5_hybrid_summary.*`, `output/models/stage5_hybrid_*.keras`.

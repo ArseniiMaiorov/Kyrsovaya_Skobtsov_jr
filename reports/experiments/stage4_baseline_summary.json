@@ -24,7 +24,7 @@
         "macro_recall": 0.125,
         "macro_f1": 0.1818181818181818,
         "weighted_f1": 0.4848484848484848,
-        "roc_auc_ovr_macro": null,
+        "roc_auc_ovr_macro": 0.5625,
         "confusion_matrix": [
           [
             3,
@@ -81,8 +81,21 @@
           }
         },
         "classification_report_text": "              precision    recall  f1-score   support\n\n           0       1.00      0.38      0.55         8\n           1       0.00      0.00      0.00         0\n           2       0.00      0.00      0.00         1\n\n    accuracy                           0.33         9\n   macro avg       0.33      0.12      0.18         9\nweighted avg       0.89      0.33      0.48         9\n",
-        "roc_auc_note": "ROC AUC не вычислен: получено значение NaN"
-      }
+        "roc_auc_note": "ROC AUC рассчитан по присутствующим классам (0, 2); отсутствующие классы исключены из усреднения"
+      },
+      "roc_curve": {
+        "path": "reports/figures/stage4_baseline_raw_roc.png",
+        "present_labels": [
+          0,
+          2
+        ],
+        "per_class_auc": {
+          "0": 1.0,
+          "2": 0.125
+        }
+      },
+      "feature_importance": null,
+      "feature_importance_plot": null
     },
     "improved": {
       "train_shape_flat": [
@@ -97,11 +110,11 @@
       "val_metrics": {
         "accuracy": 0.8888888888888888,
         "balanced_accuracy": 0.5,
-        "macro_precision": 0.4444444444444444,
-        "macro_recall": 0.5,
-        "macro_f1": 0.47058823529411764,
+        "macro_precision": 0.2962962962962963,
+        "macro_recall": 0.3333333333333333,
+        "macro_f1": 0.3137254901960784,
         "weighted_f1": 0.8366013071895425,
-        "roc_auc_ovr_macro": null,
+        "roc_auc_ovr_macro": 0.1875,
         "confusion_matrix": [
           [
             8,
@@ -158,8 +171,178 @@
           }
         },
         "classification_report_text": "              precision    recall  f1-score   support\n\n           0       0.89      1.00      0.94         8\n           1       0.00      0.00      0.00         0\n           2       0.00      0.00      0.00         1\n\n    accuracy                           0.89         9\n   macro avg       0.30      0.33      0.31         9\nweighted avg       0.79      0.89      0.84         9\n",
-        "roc_auc_note": "ROC AUC не вычислен: получено значение NaN"
-      }
+        "roc_auc_note": "ROC AUC рассчитан по присутствующим классам (0, 2); отсутствующие классы исключены из усреднения"
+      },
+      "roc_curve": {
+        "path": "reports/figures/stage4_baseline_improved_roc.png",
+        "present_labels": [
+          0,
+          2
+        ],
+        "per_class_auc": {
+          "0": 0.375,
+          "2": 0.0
+        }
+      },
+      "feature_importance": {
+        "class_0": [
+          {
+            "feature": "Ipt2,A[t115]",
+            "coef": 0.01304601039737463,
+            "abs_coef": 0.01304601039737463
+          },
+          {
+            "feature": "TGbv,C[t094]",
+            "coef": -0.01010703481733799,
+            "abs_coef": 0.01010703481733799
+          },
+          {
+            "feature": "TDS2,C[t061]",
+            "coef": -0.009224840439856052,
+            "abs_coef": 0.009224840439856052
+          },
+          {
+            "feature": "TDS2,C[t029]",
+            "coef": -0.008658391423523426,
+            "abs_coef": 0.008658391423523426
+          },
+          {
+            "feature": "TDS7,C[t094]",
+            "coef": -0.007601322140544653,
+            "abs_coef": 0.007601322140544653
+          },
+          {
+            "feature": "TDS1,C[t069]",
+            "coef": -0.0074289655312895775,
+            "abs_coef": 0.0074289655312895775
+          },
+          {
+            "feature": "TDS3,C[t054]",
+            "coef": -0.0072420742362737656,
+            "abs_coef": 0.0072420742362737656
+          },
+          {
+            "feature": "TDS3,C[t056]",
+            "coef": -0.007033323869109154,
+            "abs_coef": 0.007033323869109154
+          },
+          {
+            "feature": "TKpt,C[t062]",
+            "coef": -0.006966792978346348,
+            "abs_coef": 0.006966792978346348
+          },
+          {
+            "feature": "TKpt,C[t030]",
+            "coef": -0.00659434637054801,
+            "abs_coef": 0.00659434637054801
+          }
+        ],
+        "class_1": [
+          {
+            "feature": "Ipt2,A[t115]",
+            "coef": -0.0066766864620149136,
+            "abs_coef": 0.0066766864620149136
+          },
+          {
+            "feature": "TR1,C[t114]",
+            "coef": 0.005496175028383732,
+            "abs_coef": 0.005496175028383732
+          },
+          {
+            "feature": "TDS2,C[t061]",
+            "coef": 0.004667343571782112,
+            "abs_coef": 0.004667343571782112
+          },
+          {
+            "feature": "TGbv,C[t094]",
+            "coef": 0.004581327084451914,
+            "abs_coef": 0.004581327084451914
+          },
+          {
+            "feature": "TDS2,C[t029]",
+            "coef": 0.004267808981239796,
+            "abs_coef": 0.004267808981239796
+          },
+          {
+            "feature": "TDS3,C[t054]",
+            "coef": 0.004003412555903196,
+            "abs_coef": 0.004003412555903196
+          },
+          {
+            "feature": "TR1,C[t125]",
+            "coef": -0.003915049135684967,
+            "abs_coef": 0.003915049135684967
+          },
+          {
+            "feature": "TR1,C[t126]",
+            "coef": -0.0039043312426656485,
+            "abs_coef": 0.0039043312426656485
+          },
+          {
+            "feature": "TDS7,C[t094]",
+            "coef": 0.0037742822896689177,
+            "abs_coef": 0.0037742822896689177
+          },
+          {
+            "feature": "TDS1,C[t069]",
+            "coef": 0.0037095812149345875,
+            "abs_coef": 0.0037095812149345875
+          }
+        ],
+        "class_2": [
+          {
+            "feature": "Ipt2,A[t115]",
+            "coef": -0.00636916933581233,
+            "abs_coef": 0.00636916933581233
+          },
+          {
+            "feature": "TGbv,C[t094]",
+            "coef": 0.005525798071175814,
+            "abs_coef": 0.005525798071175814
+          },
+          {
+            "feature": "Ipt1,A[t088]",
+            "coef": 0.0051519861444830894,
+            "abs_coef": 0.0051519861444830894
+          },
+          {
+            "feature": "Ipt1,A[t121]",
+            "coef": 0.00512048089876771,
+            "abs_coef": 0.00512048089876771
+          },
+          {
+            "feature": "Ipt1,A[t013]",
+            "coef": 0.005051551852375269,
+            "abs_coef": 0.005051551852375269
+          },
+          {
+            "feature": "TR1,C[t013]",
+            "coef": -0.004994076211005449,
+            "abs_coef": 0.004994076211005449
+          },
+          {
+            "feature": "Ipt2,A[t041]",
+            "coef": 0.004934636875987053,
+            "abs_coef": 0.004934636875987053
+          },
+          {
+            "feature": "Ipt2,A[t104]",
+            "coef": 0.004566145595163107,
+            "abs_coef": 0.004566145595163107
+          },
+          {
+            "feature": "TDS2,C[t061]",
+            "coef": 0.0045580496080219746,
+            "abs_coef": 0.0045580496080219746
+          },
+          {
+            "feature": "TDS2,C[t029]",
+            "coef": 0.0043904706835746765,
+            "abs_coef": 0.0043904706835746765
+          }
+        ]
+      },
+      "feature_importance_plot": "reports/figures/stage4_baseline_improved_feature_importance.png"
     }
   },
   "best_dataset_version_by_val_macro_f1": "improved"

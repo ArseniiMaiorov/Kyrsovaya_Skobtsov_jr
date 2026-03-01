@@ -48,12 +48,60 @@
 - добавлен скрипт `scripts/run_stage4_baseline.py` для `LogisticRegression` на flattened окнах;
 - формируются артефакты в `reports/experiments/stage4_baseline_summary.*`.
 
-## Этапы 5-8
-Пока не реализованы:
-- `scripts/run_stage5_hybrid.py`
-- `scripts/run_stage6_ga_search.py`
-- `scripts/run_stage7_autoencoder_pretrain.py`
-- `scripts/run_stage8_final_eval.py`
+## Этап 5 (гибрид)
+Сделано:
+- реализован модуль `src/models/hybrid.py`;
+- реализован training-контур `src/training/hybrid_training.py`;
+- добавлен скрипт `scripts/run_stage5_hybrid.py`;
+- формируются артефакты в `reports/experiments/stage5_hybrid_summary.*`;
+- сохраняются веса моделей в `output/models/stage5_hybrid_*.keras`.
+
+## Дополнительная rolling-диагностика
+Сделано:
+- реализован модуль `src/data/rolling_validation.py`;
+- добавлен скрипт `scripts/run_rolling_diagnostics.py`;
+- rolling-фолды строятся только внутри официального train-сегмента;
+- формируются артефакты в `reports/experiments/rolling_diagnostics_summary.*`;
+- сохраняется план фолдов в `output/artifacts/rolling_diagnostics_plan.json`.
+
+## Этап 6
+Сделано:
+- реализован скрипт `scripts/run_stage6_ga_search.py`;
+- реализован модуль `src/training/ga_search.py`;
+- поиск выполняется только на `improved`;
+- fitness считается только на официальном `val`;
+- rolling-диагностика не участвует в отборе;
+- сохраняются артефакты:
+  - `reports/experiments/stage6_ga_search_summary.*`
+  - `output/logs/ga_population_log.jsonl`
+  - `output/artifacts/stage6_best_genome.json`
+  - `output/models/stage6_ga_best.keras`.
+
+## Этап 7
+Сделано:
+- реализован скрипт `scripts/run_stage7_autoencoder_pretrain.py`;
+- добавлены модули:
+  - `src/models/autoencoder.py`
+  - `src/training/autoencoder_training.py`;
+- AE предобучается на неразмеченных окнах `improved`;
+- статистики `improved` обучаются на размеченном `train`, затем применяются к `unlabeled`;
+- сравнение выполняется на одном и том же официальном `val`: `с нуля` vs `после AE`;
+- сохраняются артефакты:
+  - `reports/experiments/stage7_autoencoder_pretrain_summary.*`
+  - `output/models/stage7_autoencoder.keras`
+  - `output/models/stage7_hybrid_scratch.keras`
+  - `output/models/stage7_hybrid_ae_finetuned.keras`.
+
+## Этап 8
+Сделано:
+- реализован скрипт `scripts/run_stage8_final_eval.py`;
+- перед использованием `test` выбирается лучший пайплайн только по `val`;
+- выполняется проверка стабильности лучшей конфигурации на `seed ∈ {0, 1, 2}`;
+- на `test` выполняется одна финальная оценка;
+- повторный запуск блокируется, если уже существует `stage8_final_eval_summary.json`;
+- сохраняются артефакты:
+  - `reports/experiments/stage8_final_eval_summary.*`
+  - `output/models/stage8_final_selected.keras`.
 
 ## Модуль воспроизводимости
 Реализован единый модуль `src/utils/reproducibility.py`, который:
@@ -77,6 +125,11 @@ pytest --cov=src --cov-report=term-missing --cov-fail-under=100
 ./scripts/run_eda_stage2.py
 ./scripts/run_stage3_preprocessing.py
 ./scripts/run_stage4_baseline.py
+./scripts/run_stage5_hybrid.py
+./scripts/run_rolling_diagnostics.py
+./scripts/run_stage6_ga_search.py
+./scripts/run_stage7_autoencoder_pretrain.py
+./scripts/run_stage8_final_eval.py
 ```
 
 ## Структура

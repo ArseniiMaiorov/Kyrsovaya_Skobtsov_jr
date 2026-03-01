@@ -1,0 +1,13 @@
+version: "3.8"
+
+services:
+  coursework:
+    build: .
+    volumes:
+      - ./data:/app/data
+      - ./output:/app/output
+      - ./reports:/app/reports
+      - ./report:/app/report
+    environment:
+      - PYTHONPATH=/app
+    command: python scripts/run_stage8_final_eval.py

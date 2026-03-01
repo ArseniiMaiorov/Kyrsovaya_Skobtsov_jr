@@ -1,5 +1,185 @@
 # Журнал разработки
 
+## 2026-03-01 - Этап 8: финальная оценка на test
+
+Что сделано:
+- Добавлен скрипт `scripts/run_stage8_final_eval.py`.
+- Реализован защищённый протокол:
+  - лучший пайплайн выбирается только по `val`;
+  - перед `test` выполняется проверка стабильности на `seed ∈ {0,1,2}`;
+  - `test` используется один раз;
+  - повторный запуск блокируется, если уже существует `stage8_final_eval_summary.json`.
+- В качестве финального кандидата сравниваются:
+  - `stage6_ga_no_ae`
+  - `stage7_ae_pretrained`
+- Для финальной оценки выбран `stage6_ga_no_ae`, так как он лучший по `val`.
+
+Результат:
+- Выбранный пайплайн: `stage6_ga_no_ae`
+- Финальный seed: `1`
+- Проверка стабильности на `val`:
+  - `seed 0`: `macro_f1 = 0.6444`
+  - `seed 1`: `macro_f1 = 0.6667`
+  - `seed 2`: `macro_f1 = 0.2917`
+- Относительно baseline условие стабильности не выполнено:
+  - на `seed 2` модель опускается ниже baseline `improved` (`0.3137`).
+- Финальная оценка на `test`:
+  - `macro_f1 = 0.6667`
+  - `balanced_accuracy = 1.0000`
+  - `ROC AUC = n/a`
+  - на текущем `test` отсутствует класс `2`
+  - ошибок по `confusion matrix` не зафиксировано
+
+Сформированы артефакты:
+- `reports/experiments/stage8_final_eval_summary.json`
+- `reports/experiments/stage8_final_eval_summary.md`
+- `output/models/stage8_final_selected.keras`
+
+## 2026-03-01 - Этап 7: AE-предобучение и fine-tuning классификатора
+
+Что сделано:
+- Добавлен модуль `src/models/autoencoder.py`:
+  - AE строится на encoder-части гибридной модели;
+  - decoder восстанавливает вход через `RepeatVector -> GRU(return_sequences=True) -> TimeDistributed(Dense)`;
+  - реализованы извлечение и перенос encoder-весов.
+- Добавлен модуль `src/training/autoencoder_training.py`:
+  - разбиение неразмеченных окон на `pretrain_train/pretrain_val` без перемешивания;
+  - обучение AE на задаче реконструкции;
+  - оценка reconstruction MSE;
+  - fine-tuning классификатора после переноса весов.
+- Добавлен скрипт `scripts/run_stage7_autoencoder_pretrain.py`.
+- Для Stage 7 используется `improved`-предобработка, обученная на размеченном `train`, и затем применяемая к `unlabeled`.
+- В качестве encoder-конфига используется `stage6_best_genome` (если артефакт доступен).
+- Добавлены тесты:
+  - `tests/test_autoencoder.py`
+  - `tests/test_autoencoder_training.py`
+
+Результат:
+- Неразмеченные окна для AE: `473`
+- Внутренний split для AE:
+  - `pretrain_train = 403`
+  - `pretrain_val = 70`
+- AE:
+  - `mean_reconstruction_mse = 141.109283`
+  - лучшая эпоха = `6`
+  - эпох выполнено = `11`
+- Классификатор с нуля:
+  - `val macro_f1 = 0.6444`
+  - `val balanced_accuracy = 0.9375`
+- Классификатор после AE:
+  - `val macro_f1 = 0.6444`
+  - `val balanced_accuracy = 0.9375`
+  - перенесены слои: `conv1d_1`, `batch_norm_1`, `gru_1`
+- На текущем официальном `val` AE-предобучение не дало прироста относительно запуска `с нуля`.
+
+Сформированы артефакты:
+- `reports/experiments/stage7_autoencoder_pretrain_summary.json`
+- `reports/experiments/stage7_autoencoder_pretrain_summary.md`
+- `output/models/stage7_autoencoder.keras`
+- `output/models/stage7_hybrid_scratch.keras`
+- `output/models/stage7_hybrid_ae_finetuned.keras`
+
+Проверка:
+- `pytest --cov=src --cov-report=term-missing --cov-fail-under=100`
+- Результат: `253` теста, покрытие `src = 100%`.
+
+## 2026-03-01 - Этап 6: генетический алгоритм для подбора гиперпараметров
+
+Что сделано:
+- Добавлен модуль `src/training/ga_search.py`:
+  - фиксированное пространство поиска по 9 генам;
+  - начальная популяция равномерным сэмплированием;
+  - `tournament selection` с размером турнира `3`;
+  - `two-point crossover`;
+  - независимая мутация каждого гена с вероятностью `0.2`;
+  - `elitism = 1`;
+  - JSONL-лог всех индивидов.
+- Добавлен скрипт `scripts/run_stage6_ga_search.py`.
+- Для поиска используется только `improved`-версия данных.
+- Fitness считается только на официальном `val`.
+- Поддержано возобновление из частично заполненного `output/logs/ga_population_log.jsonl`.
+- Сформированы артефакты:
+  - `reports/experiments/stage6_ga_search_summary.json`
+  - `reports/experiments/stage6_ga_search_summary.md`
+  - `output/logs/ga_population_log.jsonl`
+  - `output/artifacts/stage6_best_genome.json`
+  - `output/models/stage6_ga_best.keras`
+- Добавлены тесты `tests/test_ga_search.py`.
+
+Результат:
+- Полный лог GA: `96` записей (`12 x 8`).
+- Лучший индивид по fitness:
+  - `generation = 5`
+  - `individual_id = 11`
+  - `val macro_f1 = 0.6667`
+  - `val balanced_accuracy = 1.0000`
+- Финальное дообучение лучшего генома:
+  - `val macro_f1 = 0.6667`
+  - прирост к baseline (`этап 4`, `improved`) = `+0.3529`
+  - прирост к базовому hybrid (`этап 5`, `improved`) = `+0.0222`
+
+Проверка:
+- `pytest --cov=src --cov-report=term-missing --cov-fail-under=100`
+- Результат: `244` теста, покрытие `src = 100%`.
+
+## 2026-03-01 - Дополнительная rolling-диагностика устойчивости
+
+Что сделано:
+- Добавлен модуль `src/data/rolling_validation.py`.
+- Реализована дополнительная expanding-window валидация внутри официального train-сегмента.
+- Добавлен скрипт `scripts/run_rolling_diagnostics.py`.
+- Диагностика выполняется на `improved`-версии данных для:
+  - `baseline_logistic_regression`
+  - `hybrid_cnn_gru_dense`
+- Сохраняются артефакты:
+  - `reports/experiments/rolling_diagnostics_summary.*`
+  - `output/artifacts/rolling_diagnostics_plan.json`
+- При неинформативном train-фолде (меньше двух классов) модель помечается как `FAIL`, но общий прогон не останавливается.
+- Исправлен baseline-контур:
+  - вероятности `predict_proba` теперь выравниваются по полному списку меток `0/1/2`, даже если модель обучена не на всех классах.
+- Исправлен общий расчёт macro-метрик:
+  - `macro_precision`, `macro_recall`, `macro_f1`, `weighted_f1` теперь считаются строго по фиксированному списку меток, а не по случайному набору классов, попавших в `y_true/y_pred`.
+
+Зачем это добавлено:
+- текущий официальный `val` слишком мал и не содержит все классы;
+- rolling-диагностика нужна как дополнительная проверка устойчивости перед этапом 6 (GA);
+- официальный `val` по ТЗ не меняется и не заменяется.
+
+## 2026-03-01 - Этап 5: гибрид 1D-CNN -> GRU -> Dense
+
+Что сделано:
+- `config.yaml` расширен разделом `training.hybrid`.
+- Добавлен модуль `src/models/hybrid.py`:
+  - валидация конфига гибридной модели;
+  - сборка `Conv1D -> BatchNorm -> Activation -> Dropout -> GRU -> Dense -> Softmax`;
+  - компиляция с поддержкой `adam/rmsprop/nadam`.
+- Добавлен модуль `src/training/hybrid_training.py`:
+  - обязательные callbacks по ТЗ;
+  - расчёт `class_weight=balanced`;
+  - обучение без перемешивания;
+  - оценка на `val`;
+  - краткая сводка истории обучения.
+- Добавлен скрипт `scripts/run_stage5_hybrid.py`.
+- Добавлены тесты:
+  - `tests/test_hybrid.py`
+  - `tests/test_hybrid_training.py`
+
+Фактический результат на реальных данных:
+- `raw`: `val macro_f1 = 0.3111`
+- `improved`: `val macro_f1 = 0.6444`
+- прирост относительно baseline на `improved`:
+  - baseline `0.4706`
+  - hybrid `0.6444`
+  - итоговый прирост `+0.1738` по `val macro_f1`
+
+Ограничение текущего split:
+- В `val` по-прежнему отсутствует класс `1`, поэтому `ROC AUC` на этапе 5 не вычисляется и сохраняется как `n/a` с пояснением.
+- Это не нарушение контракта ТЗ, а свойство фиксированного time-based разбиения на текущем наборе.
+
+Проверка:
+- `pytest --cov=src --cov-report=term-missing --cov-fail-under=100`
+- Результат: `214` тестов, покрытие `src = 100%`.
+
 ## 2026-03-01 - Модуль воспроизводимости
 
 Что сделано:

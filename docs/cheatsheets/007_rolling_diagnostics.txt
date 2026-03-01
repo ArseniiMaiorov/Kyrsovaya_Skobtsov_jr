@@ -1,0 +1,28 @@
+Этап: дополнительная rolling-диагностика устойчивости
+
+Назначение:
+- это дополнительный диагностический контур перед GA;
+- он не заменяет официальный `val` по ТЗ;
+- используется только внутри официального train-сегмента.
+
+Что делает:
+- строит 3 expanding-window фолда;
+- для каждого фолда заново обучает `improved`-предобработку только на train-фолде;
+- считает метрики для:
+  - `baseline_logistic_regression`
+  - `hybrid_cnn_gru_dense`
+- если в train-фолде меньше двух классов, такой фолд помечается как `FAIL` и не валит весь запуск.
+
+Команда запуска:
+- `.venv/bin/python scripts/run_rolling_diagnostics.py`
+
+Артефакты:
+- `reports/experiments/rolling_diagnostics_summary.json`
+- `reports/experiments/rolling_diagnostics_summary.md`
+- `output/artifacts/rolling_diagnostics_plan.json`
+
+Что смотреть в отчёте:
+- mean/std/min/max по `macro-F1` и `balanced_accuracy`;
+- наличие отсутствующих классов в `fold-val`;
+- разброс метрик между фолдами;
+- стабильнее ли гибрид относительно baseline.

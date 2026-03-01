@@ -1,0 +1,32 @@
+Этап: AE-предобучение и fine-tuning (этап 7)
+
+Назначение:
+- предобучить encoder на неразмеченных окнах;
+- перенести веса encoder в классификатор;
+- сравнить на одном и том же `val`: `с нуля` vs `после AE`.
+
+Что делает:
+- берёт `improved`-предобработку, обученную на размеченном `train`;
+- применяет её к `data/MKA_04.2015_unlabeled.csv`;
+- строит окна теми же `T/stride`;
+- выделяет внутренний `pretrain_val` из неразмеченных окон без перемешивания;
+- обучает AE на задаче реконструкции `X -> X`;
+- переносит веса `conv1d_*`, `batch_norm_*`, `gru_*` в классификатор;
+- дообучает классификатор на размеченном `train` и сравнивает с запуском `с нуля`.
+
+Команда запуска:
+- `.venv/bin/python scripts/run_stage7_autoencoder_pretrain.py`
+
+Артефакты:
+- `reports/experiments/stage7_autoencoder_pretrain_summary.json`
+- `reports/experiments/stage7_autoencoder_pretrain_summary.md`
+- `output/models/stage7_autoencoder.keras`
+- `output/models/stage7_hybrid_scratch.keras`
+- `output/models/stage7_hybrid_ae_finetuned.keras`
+
+Что смотреть в отчёте:
+- сколько получилось неразмеченных окон для AE;
+- размер `pretrain_train/pretrain_val`;
+- reconstruction MSE;
+- список реально перенесённых слоёв;
+- прирост/отсутствие прироста по `macro-F1` после AE.

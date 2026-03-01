@@ -51,10 +51,46 @@ def valid_config() -> dict:
             "max_epochs_final": 50,
             "target_macro_f1_gain_vs_baseline": 0.03,
         },
+        "augmentation": {
+            "enabled": True,
+            "aug_factor": 3,
+            "methods": ["noise", "scale"],
+            "noise_std": 0.01,
+            "scale_min": 0.9,
+            "scale_max": 1.1,
+            "shift_min": -5,
+            "shift_max": 5,
+        },
         "training": {
             "early_stopping_patience": 5,
             "reduce_lr_patience": 3,
             "reduce_lr_factor": 0.5,
+            "hybrid": {
+                "n_conv_layers": 1,
+                "conv_filters": 64,
+                "conv_kernel_size": 5,
+                "n_gru_layers": 1,
+                "gru_units": 128,
+                "n_dense_layers": 1,
+                "dense_units": 128,
+                "activation": "relu",
+                "optimizer": "adam",
+                "loss": "sparse_categorical_crossentropy",
+                "rnn_type": "gru",
+                "use_attention": False,
+                "attention_units": 128,
+                "batch_size": 8,
+                "max_epochs": 30,
+                "conv_dropout": 0.2,
+                "dense_dropout": 0.3,
+                "l2_dense": 0.0001,
+            },
+            "autoencoder": {
+                "batch_size": 8,
+                "pretrain_max_epochs": 50,
+                "pretrain_val_ratio": 0.15,
+                "use_stage6_best_genome": True,
+            },
         },
     }
 
@@ -108,10 +144,43 @@ compute_budget:
   max_epochs_fitness: 10
   max_epochs_final: 50
   target_macro_f1_gain_vs_baseline: 0.03
+augmentation:
+  enabled: true
+  aug_factor: 3
+  methods: [noise, scale]
+  noise_std: 0.01
+  scale_min: 0.9
+  scale_max: 1.1
+  shift_min: -5
+  shift_max: 5
 training:
   early_stopping_patience: 5
   reduce_lr_patience: 3
   reduce_lr_factor: 0.5
+  hybrid:
+    n_conv_layers: 1
+    conv_filters: 64
+    conv_kernel_size: 5
+    n_gru_layers: 1
+    gru_units: 128
+    n_dense_layers: 1
+    dense_units: 128
+    activation: relu
+    optimizer: adam
+    loss: sparse_categorical_crossentropy
+    rnn_type: gru
+    use_attention: false
+    attention_units: 128
+    batch_size: 8
+    max_epochs: 30
+    conv_dropout: 0.2
+    dense_dropout: 0.3
+    l2_dense: 0.0001
+  autoencoder:
+    batch_size: 8
+    pretrain_max_epochs: 50
+    pretrain_val_ratio: 0.15
+    use_stage6_best_genome: true
         """.strip(),
         encoding="utf-8",
     )
@@ -174,6 +243,96 @@ def test_validate_config_reproducibility_checksum_algorithm_error(valid_config):
     broken = deepcopy(valid_config)
     broken["reproducibility"]["checksum_algorithm"] = "md5"
     with pytest.raises(ConfigError, match="reproducibility.checksum_algorithm"):
+        validate_config(broken)
+
+
+def test_validate_config_augmentation_errors(valid_config):
+    broken = deepcopy(valid_config)
+    broken["augmentation"] = "bad"
+    with pytest.raises(ConfigError, match="augmentation должен быть словарем"):
+        validate_config(broken)
+
+    broken = deepcopy(valid_config)
+    broken["augmentation"]["enabled"] = "yes"
+    with pytest.raises(ConfigError, match="augmentation.enabled"):
+        validate_config(broken)
+
+    broken = deepcopy(valid_config)
+    broken["augmentation"]["methods"] = []
+    with pytest.raises(ConfigError, match="augmentation.methods"):
+        validate_config(broken)
+
+    broken = deepcopy(valid_config)
+    broken["augmentation"]["methods"] = ["flip"]
+    with pytest.raises(ConfigError, match="augmentation.methods"):
+        validate_config(broken)
+
+    broken = deepcopy(valid_config)
+    broken["augmentation"]["scale_min"] = 2.0
+    broken["augmentation"]["scale_max"] = 1.0
+    with pytest.raises(ConfigError, match="scale_min"):
+        validate_config(broken)
+
+    broken = deepcopy(valid_config)
+    broken["augmentation"]["noise_std"] = "bad"
+    with pytest.raises(ConfigError, match="augmentation.noise_std"):
+        validate_config(broken)
+
+    broken = deepcopy(valid_config)
+    broken["augmentation"]["noise_std"] = -0.1
+    with pytest.raises(ConfigError, match="noise_std"):
+        validate_config(broken)
+
+    broken = deepcopy(valid_config)
+    broken["augmentation"]["scale_min"] = 0.0
+    with pytest.raises(ConfigError, match="scale_min и augmentation.scale_max"):
+        validate_config(broken)
+
+    broken = deepcopy(valid_config)
+    broken["augmentation"]["shift_min"] = 10
+    broken["augmentation"]["shift_max"] = 5
+    with pytest.raises(ConfigError, match="shift_min"):
+        validate_config(broken)
+
+
+def test_validate_config_autoencoder_not_mapping(valid_config):
+    broken = deepcopy(valid_config)
+    broken["training"]["autoencoder"] = "bad"
+    with pytest.raises(ConfigError, match="training.autoencoder должен быть словарем"):
+        validate_config(broken)
+
+
+def test_validate_config_autoencoder_field_errors(valid_config):
+    broken = deepcopy(valid_config)
+    broken["training"]["autoencoder"]["batch_size"] = 0
+    with pytest.raises(ConfigError, match="training.autoencoder.batch_size"):
+        validate_config(broken)
+
+    broken = deepcopy(valid_config)
+    broken["training"]["autoencoder"]["pretrain_val_ratio"] = 1.0
+    with pytest.raises(ConfigError, match="training.autoencoder.pretrain_val_ratio"):
+        validate_config(broken)
+
+    broken = deepcopy(valid_config)
+    broken["training"]["autoencoder"]["use_stage6_best_genome"] = "yes"
+    with pytest.raises(ConfigError, match="training.autoencoder.use_stage6_best_genome"):
+        validate_config(broken)
+
+
+def test_validate_config_hybrid_new_fields_errors(valid_config):
+    broken = deepcopy(valid_config)
+    broken["training"]["hybrid"]["rnn_type"] = "rnn"
+    with pytest.raises(ConfigError, match="training.hybrid.rnn_type"):
+        validate_config(broken)
+
+    broken = deepcopy(valid_config)
+    broken["training"]["hybrid"]["use_attention"] = "yes"
+    with pytest.raises(ConfigError, match="training.hybrid.use_attention"):
+        validate_config(broken)
+
+    broken = deepcopy(valid_config)
+    broken["training"]["hybrid"]["attention_units"] = 0
+    with pytest.raises(ConfigError, match="training.hybrid.attention_units"):
         validate_config(broken)
 
 
@@ -426,4 +585,81 @@ def test_validate_config_training_factor_error(valid_config):
     broken = deepcopy(valid_config)
     broken["training"]["reduce_lr_factor"] = 1.0
     with pytest.raises(ConfigError, match="training.reduce_lr_factor"):
+        validate_config(broken)
+
+
+def test_validate_config_training_not_mapping(valid_config):
+    broken = deepcopy(valid_config)
+    broken["training"] = "bad"
+    with pytest.raises(ConfigError, match="training должен быть словарем"):
+        validate_config(broken)
+
+
+def test_validate_config_training_hybrid_not_mapping(valid_config):
+    broken = deepcopy(valid_config)
+    broken["training"]["hybrid"] = "bad"
+    with pytest.raises(ConfigError, match="training.hybrid"):
+        validate_config(broken)
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "error"),
+    [
+        ("n_conv_layers", 0, "training.hybrid.n_conv_layers"),
+        ("conv_filters", 0, "training.hybrid.conv_filters"),
+        ("conv_kernel_size", 0, "training.hybrid.conv_kernel_size"),
+        ("n_gru_layers", 0, "training.hybrid.n_gru_layers"),
+        ("gru_units", 0, "training.hybrid.gru_units"),
+        ("n_dense_layers", 0, "training.hybrid.n_dense_layers"),
+        ("dense_units", 0, "training.hybrid.dense_units"),
+        ("batch_size", 0, "training.hybrid.batch_size"),
+        ("max_epochs", 0, "training.hybrid.max_epochs"),
+    ],
+)
+def test_validate_config_training_hybrid_positive_int_errors(valid_config, field, value, error):
+    broken = deepcopy(valid_config)
+    broken["training"]["hybrid"][field] = value
+    with pytest.raises(ConfigError, match=error):
+        validate_config(broken)
+
+
+def test_validate_config_training_hybrid_activation_error(valid_config):
+    broken = deepcopy(valid_config)
+    broken["training"]["hybrid"]["activation"] = "sigmoid"
+    with pytest.raises(ConfigError, match="training.hybrid.activation"):
+        validate_config(broken)
+
+
+def test_validate_config_training_hybrid_optimizer_error(valid_config):
+    broken = deepcopy(valid_config)
+    broken["training"]["hybrid"]["optimizer"] = "sgd"
+    with pytest.raises(ConfigError, match="training.hybrid.optimizer"):
+        validate_config(broken)
+
+
+def test_validate_config_training_hybrid_loss_error(valid_config):
+    broken = deepcopy(valid_config)
+    broken["training"]["hybrid"]["loss"] = "mse"
+    with pytest.raises(ConfigError, match="training.hybrid.loss"):
+        validate_config(broken)
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("conv_dropout", 1.0),
+        ("dense_dropout", 1.0),
+    ],
+)
+def test_validate_config_training_hybrid_dropout_errors(valid_config, field, value):
+    broken = deepcopy(valid_config)
+    broken["training"]["hybrid"][field] = value
+    with pytest.raises(ConfigError, match=f"training.hybrid.{field}"):
+        validate_config(broken)
+
+
+def test_validate_config_training_hybrid_l2_dense_error(valid_config):
+    broken = deepcopy(valid_config)
+    broken["training"]["hybrid"]["l2_dense"] = -0.1
+    with pytest.raises(ConfigError, match="training.hybrid.l2_dense"):
         validate_config(broken)

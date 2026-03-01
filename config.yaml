@@ -50,7 +50,41 @@ compute_budget:
   max_epochs_final: 50
   target_macro_f1_gain_vs_baseline: 0.03
 
+augmentation:
+  enabled: true
+  aug_factor: 3
+  methods: ["noise", "scale"]
+  noise_std: 0.01
+  scale_min: 0.9
+  scale_max: 1.1
+  shift_min: -5
+  shift_max: 5
+
 training:
   early_stopping_patience: 5
   reduce_lr_patience: 3
   reduce_lr_factor: 0.5
+  hybrid:
+    n_conv_layers: 1
+    conv_filters: 64
+    conv_kernel_size: 5
+    n_gru_layers: 1
+    gru_units: 128
+    n_dense_layers: 1
+    dense_units: 128
+    activation: "relu"
+    optimizer: "adam"
+    loss: "sparse_categorical_crossentropy"
+    rnn_type: "gru"
+    use_attention: false
+    attention_units: 128
+    batch_size: 8
+    max_epochs: 30
+    conv_dropout: 0.2
+    dense_dropout: 0.3
+    l2_dense: 0.0001
+  autoencoder:
+    batch_size: 8
+    pretrain_max_epochs: 50
+    pretrain_val_ratio: 0.15
+    use_stage6_best_genome: true

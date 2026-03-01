@@ -20,6 +20,11 @@ REQUIRED_TOP_LEVEL_SECTIONS = (
 
 SUPPORTED_TABULAR_FORMATS = {"csv", "xls"}
 SUPPORTED_CHECKSUM_ALGORITHMS = {"sha256"}
+SUPPORTED_HYBRID_ACTIVATIONS = {"relu", "elu", "tanh"}
+SUPPORTED_HYBRID_OPTIMIZERS = {"adam", "rmsprop", "nadam"}
+SUPPORTED_HYBRID_LOSSES = {"categorical_crossentropy", "sparse_categorical_crossentropy"}
+SUPPORTED_HYBRID_RNN_TYPES = {"gru", "lstm", "bi_gru", "bi_lstm"}
+SUPPORTED_AUGMENTATION_METHODS = {"noise", "scale", "shift"}
 
 
 class ConfigError(ValueError):
@@ -169,6 +174,114 @@ def _validate_reproducibility_section(repro_cfg: Mapping[str, Any] | Any) -> Non
         raise ConfigError(f"reproducibility.checksum_algorithm должен быть одним из: {supported}")
 
 
+def _validate_hybrid_training_section(hybrid_cfg: Mapping[str, Any] | Any) -> None:
+    if not isinstance(hybrid_cfg, Mapping):
+        raise ConfigError("training.hybrid должен быть словарем")
+
+    for field_name in (
+        "n_conv_layers",
+        "conv_filters",
+        "conv_kernel_size",
+        "n_gru_layers",
+        "gru_units",
+        "n_dense_layers",
+        "dense_units",
+        "batch_size",
+        "max_epochs",
+    ):
+        _require_positive_int(hybrid_cfg.get(field_name), f"training.hybrid.{field_name}")
+
+    activation = hybrid_cfg.get("activation")
+    if activation not in SUPPORTED_HYBRID_ACTIVATIONS:
+        supported = ", ".join(sorted(SUPPORTED_HYBRID_ACTIVATIONS))
+        raise ConfigError(f"training.hybrid.activation должен быть одним из: {supported}")
+
+    optimizer = hybrid_cfg.get("optimizer")
+    if optimizer not in SUPPORTED_HYBRID_OPTIMIZERS:
+        supported = ", ".join(sorted(SUPPORTED_HYBRID_OPTIMIZERS))
+        raise ConfigError(f"training.hybrid.optimizer должен быть одним из: {supported}")
+
+    loss = hybrid_cfg.get("loss")
+    if loss not in SUPPORTED_HYBRID_LOSSES:
+        supported = ", ".join(sorted(SUPPORTED_HYBRID_LOSSES))
+        raise ConfigError(f"training.hybrid.loss должен быть одним из: {supported}")
+
+    for field_name in ("conv_dropout", "dense_dropout"):
+        value = hybrid_cfg.get(field_name)
+        if not isinstance(value, (int, float)) or not 0 <= value < 1:
+            raise ConfigError(f"training.hybrid.{field_name} должен быть в диапазоне [0, 1)")
+
+    l2_dense = hybrid_cfg.get("l2_dense")
+    if not isinstance(l2_dense, (int, float)) or l2_dense < 0:
+        raise ConfigError("training.hybrid.l2_dense должен быть числом >= 0")
+
+    rnn_type = hybrid_cfg.get("rnn_type", "gru")
+    if rnn_type not in SUPPORTED_HYBRID_RNN_TYPES:
+        supported = ", ".join(sorted(SUPPORTED_HYBRID_RNN_TYPES))
+        raise ConfigError(f"training.hybrid.rnn_type должен быть одним из: {supported}")
+
+    use_attention = hybrid_cfg.get("use_attention", False)
+    if not isinstance(use_attention, bool):
+        raise ConfigError("training.hybrid.use_attention должен быть булевым значением")
+
+    attention_units = hybrid_cfg.get("attention_units", hybrid_cfg.get("gru_units"))
+    if not isinstance(attention_units, int) or attention_units <= 0:
+        raise ConfigError("training.hybrid.attention_units должен быть положительным целым числом")
+
+
+def _validate_autoencoder_training_section(autoencoder_cfg: Mapping[str, Any] | Any) -> None:
+    if not isinstance(autoencoder_cfg, Mapping):
+        raise ConfigError("training.autoencoder должен быть словарем")
+
+    _require_positive_int(autoencoder_cfg.get("batch_size"), "training.autoencoder.batch_size")
+    _require_positive_int(autoencoder_cfg.get("pretrain_max_epochs"), "training.autoencoder.pretrain_max_epochs")
+    _require_probability(autoencoder_cfg.get("pretrain_val_ratio"), "training.autoencoder.pretrain_val_ratio")
+
+    use_stage6_best_genome = autoencoder_cfg.get("use_stage6_best_genome")
+    if not isinstance(use_stage6_best_genome, bool):
+        raise ConfigError("training.autoencoder.use_stage6_best_genome должен быть булевым значением")
+
+
+def _validate_augmentation_section(augmentation_cfg: Mapping[str, Any] | Any) -> None:
+    if not isinstance(augmentation_cfg, Mapping):
+        raise ConfigError("augmentation должен быть словарем")
+
+    enabled = augmentation_cfg.get("enabled")
+    if not isinstance(enabled, bool):
+        raise ConfigError("augmentation.enabled должен быть булевым значением")
+
+    _require_positive_int(augmentation_cfg.get("aug_factor"), "augmentation.aug_factor")
+
+    methods = augmentation_cfg.get("methods")
+    if not isinstance(methods, list) or not methods:
+        raise ConfigError("augmentation.methods должен быть непустым списком")
+    for method in methods:
+        if method not in SUPPORTED_AUGMENTATION_METHODS:
+            supported = ", ".join(sorted(SUPPORTED_AUGMENTATION_METHODS))
+            raise ConfigError(f"augmentation.methods должен содержать только: {supported}")
+
+    numeric_fields = (
+        "noise_std",
+        "scale_min",
+        "scale_max",
+        "shift_min",
+        "shift_max",
+    )
+    for field_name in numeric_fields:
+        value = augmentation_cfg.get(field_name)
+        if not isinstance(value, (int, float)):
+            raise ConfigError(f"augmentation.{field_name} должен быть числом")
+
+    if float(augmentation_cfg["noise_std"]) < 0:
+        raise ConfigError("augmentation.noise_std должен быть >= 0")
+    if float(augmentation_cfg["scale_min"]) <= 0 or float(augmentation_cfg["scale_max"]) <= 0:
+        raise ConfigError("augmentation.scale_min и augmentation.scale_max должны быть > 0")
+    if float(augmentation_cfg["scale_min"]) > float(augmentation_cfg["scale_max"]):
+        raise ConfigError("augmentation.scale_min не должен быть больше augmentation.scale_max")
+    if int(augmentation_cfg["shift_min"]) > int(augmentation_cfg["shift_max"]):
+        raise ConfigError("augmentation.shift_min не должен быть больше augmentation.shift_max")
+
+
 def validate_config(config: Mapping[str, Any]) -> None:
     """Проверяет разделы и поля конфигурации на соответствие контракту проекта."""
     missing_sections = [name for name in REQUIRED_TOP_LEVEL_SECTIONS if name not in config]
@@ -210,9 +323,18 @@ def validate_config(config: Mapping[str, Any]) -> None:
         raise ConfigError("compute_budget.target_macro_f1_gain_vs_baseline должен быть больше 0")
 
     training = config["training"]
+    if not isinstance(training, Mapping):
+        raise ConfigError("training должен быть словарем")
+
     _require_positive_int(training.get("early_stopping_patience"), "training.early_stopping_patience")
     _require_positive_int(training.get("reduce_lr_patience"), "training.reduce_lr_patience")
 
     factor = training.get("reduce_lr_factor")
     if not isinstance(factor, (int, float)) or not 0 < factor < 1:
         raise ConfigError("training.reduce_lr_factor должен быть в диапазоне (0, 1)")
+
+    _validate_hybrid_training_section(training.get("hybrid"))
+    _validate_autoencoder_training_section(training.get("autoencoder"))
+
+    if "augmentation" in config:
+        _validate_augmentation_section(config["augmentation"])
